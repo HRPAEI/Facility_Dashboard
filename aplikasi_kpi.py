@@ -16,11 +16,11 @@ def muat_data_baru():
     tautan_resmi = "https://docs.google.com/spreadsheets/d/1AWMk2xCkLc9_AqjbZQ6DvkGnxiQSVVf9PHMuXM56j50/export?format=csv&gid=0"
     
     response = requests.get(tautan_resmi, verify=False)
-    response.raise_for_status()
+    response.raise_in_status()
     
     df = pd.read_csv(io.StringIO(response.text))
 
-    # Bersihkan nama kolom dari \n dan spasi berlebih
+    # Bersihkan nama kolom
     df.columns = (
         df.columns
         .str.strip()
@@ -30,6 +30,11 @@ def muat_data_baru():
     )
 
     df = df.dropna(subset=['No.'])
+
+    # ── DEBUG: tampilkan nama kolom setelah dibersihkan ──
+    st.write("✅ Nama kolom setelah dibersihkan:")
+    st.write(df.columns.tolist())
+    # ── END DEBUG ──
 
     df['Facility'] = (
         df['Facility']
@@ -114,7 +119,6 @@ try:
     # ── Tabel Data Lengkap ───────────────────────────────────────
     st.subheader("📋 Facility Breakdowns Detail Log")
 
-    # Kolom otomatis — tidak hardcode nama kolom bermasalah
     kolom_wajib = ['No.', 'Date', 'Start time', 'End time', 'Stop time', 'Facility', 'Equipment']
     kolom_extra = [c for c in df.columns if c not in kolom_wajib and c != 'Stop_Minutes']
     kolom = kolom_wajib + kolom_extra
@@ -270,7 +274,6 @@ try:
             fig_down.update_layout(showlegend=False, xaxis_tickangle=-30)
             st.plotly_chart(fig_down, use_container_width=True)
 
-        # Tabel detail otomatis — pakai kolom yang sama
         st.markdown(f"**📋 Detail Log — {pilihan_facility}**")
         df_detail = df_filtered[kolom].copy()
         df_detail['No.'] = df_detail['No.'].astype(str).str.replace('.0', '', regex=False)
