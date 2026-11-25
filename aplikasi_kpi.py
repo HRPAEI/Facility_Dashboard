@@ -64,6 +64,16 @@ def muat_data_baru():
 try:
     df = muat_data_baru()
 
+    # ── DEBUG UTAMA ──────────────────────────────────────────────
+    st.write("### DEBUG INFO")
+    st.write("Jumlah baris:", len(df))
+    st.write("Kolom:", df.columns.tolist())
+    st.write("Sample Facility:", df['Facility'].unique().tolist())
+    st.write("Sample Stop_Minutes:", df['Stop_Minutes'].tolist()[:5])
+    st.write(df.head(3))
+    st.markdown("---")
+    # ── END DEBUG ────────────────────────────────────────────────
+
     # ── KPI Metrik ──────────────────────────────────────────────
     total_kasus = len(df)
     total_menit = df['Stop_Minutes'].sum()
@@ -91,56 +101,40 @@ try:
     st.markdown("---")
 
     # ── Visualisasi Utama ────────────────────────────────────────
-    try:
-        g1, g2 = st.columns(2)
-        with g1:
-            st.subheader("📊 Total Downtime by Facility")
-            df_fac = df.groupby('Facility')['Stop_Minutes'].sum().reset_index()
-            df_fac.columns = ['Facility', 'Stop_Minutes']
-            st.write("DEBUG df_fac:")
-            st.write(df_fac)
-            fig_bar = px.bar(
-                df_fac,
-                x='Facility', y='Stop_Minutes',
-                text_auto=True,
-                labels={'Stop_Minutes': 'Downtime (Minutes)'}
-            )
-            st.plotly_chart(fig_bar, use_container_width=True)
+    g1, g2 = st.columns(2)
+    with g1:
+        st.subheader("📊 Total Downtime by Facility")
+        df_fac = df.groupby('Facility')['Stop_Minutes'].sum().reset_index()
+        df_fac.columns = ['Facility', 'Stop_Minutes']
+        fig_bar = px.bar(
+            df_fac,
+            x='Facility', y='Stop_Minutes',
+            text_auto=True,
+            labels={'Stop_Minutes': 'Downtime (Minutes)'}
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
 
-        with g2:
-            st.subheader("🏭 Cases Based on Facility")
-            df_fac_count = df['Facility'].value_counts().reset_index()
-            df_fac_count.columns = ['Facility', 'Total']
-            st.write("DEBUG df_fac_count:")
-            st.write(df_fac_count)
-            fig_pie = px.pie(
-                df_fac_count,
-                names='Facility', values='Total',
-                hole=0.4
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-    except Exception as e2:
-        st.error(f"Error di grafik: {e2}")
-        st.write("DEBUG df kolom:", df.columns.tolist())
-        st.write("DEBUG df head:")
-        st.write(df.head())
+    with g2:
+        st.subheader("🏭 Cases Based on Facility")
+        df_fac_count = df['Facility'].value_counts().reset_index()
+        df_fac_count.columns = ['Facility', 'Total']
+        fig_pie = px.pie(
+            df_fac_count,
+            names='Facility', values='Total',
+            hole=0.4
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
 
     # ── Tabel Data Lengkap ───────────────────────────────────────
     st.subheader("📋 Facility Breakdowns Detail Log")
-
-    kolom = [
-        'No.', 'Date', 'Start time', 'End time', 'Stop time',
-        'Facility', 'Equipment', 'Facility abnormality details',
-        'Simple Reset', 'Field work action', 'Worker',
-        'Shift work', 'Emergency call', 'Failure registration', 'Safety gear'
-    ]
+    kolom_wajib = ['No.', 'Date', 'Start time', 'End time', 'Stop time', 'Facility', 'Equipment']
+    kolom_extra = [c for c in df.columns if c not in kolom_wajib and c != 'Stop_Minutes']
+    kolom = kolom_wajib + kolom_extra
 
     df_tampil = df[kolom].copy()
     df_tampil['No.'] = df_tampil['No.'].astype(str).str.replace('.0', '', regex=False)
-
     st.dataframe(
         df_tampil,
         use_container_width=True,
@@ -152,9 +146,8 @@ try:
 
     st.markdown("---")
 
-    # ── 📈 MULTI-LINE CHART — Trend per Facility ────────────────
+    # ── 📈 MULTI-LINE CHART ──────────────────────────────────────
     st.subheader("📈 Breakdown Trend per Facility (Over Time)")
-
     col_toggle1, col_toggle2 = st.columns([1, 3])
     with col_toggle1:
         granularitas = st.radio(
@@ -222,11 +215,9 @@ try:
 
     st.markdown("---")
 
-    # ── 🔍 SEARCH BOX — Equipment Breakdown per Facility ────────
+    # ── 🔍 SEARCH BOX ────────────────────────────────────────────
     st.subheader("🔍 Equipment Breakdown Search by Facility")
-
     daftar_facility = sorted(df['Facility'].dropna().unique().tolist())
-
     pilihan_facility = st.selectbox(
         "Pilih atau ketik nama Facility:",
         options=["-- Pilih Facility --"] + daftar_facility,
@@ -234,7 +225,6 @@ try:
     )
 
     if pilihan_facility != "-- Pilih Facility --":
-
         df_filtered = df[df['Facility'] == pilihan_facility]
 
         total_kasus_fac   = len(df_filtered)
@@ -250,16 +240,11 @@ try:
         )
 
         st.markdown("")
-
         ch1, ch2 = st.columns(2)
 
         with ch1:
             st.markdown(f"**📦 Cases per Equipment — {pilihan_facility}**")
-            df_eqp_count = (
-                df_filtered['Equipment']
-                .value_counts()
-                .reset_index()
-            )
+            df_eqp_count = df_filtered['Equipment'].value_counts().reset_index()
             df_eqp_count.columns = ['Equipment', 'Cases']
             fig_count = px.bar(
                 df_eqp_count,
@@ -298,3 +283,5 @@ try:
 
 except Exception as e:
     st.error(f"Gagal memproses data. Error: {e}")
+    import traceback
+    st.code(traceback.format_exc())
