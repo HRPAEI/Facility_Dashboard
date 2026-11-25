@@ -20,7 +20,15 @@ def muat_data_baru():
     
     df = pd.read_csv(io.StringIO(response.text))
 
-    df.columns = df.columns.str.strip().str.replace('\n', ' ', regex=False)
+    # Bersihkan nama kolom dari \n dan spasi berlebih
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.replace(r'[\n\r\t\xa0]', ' ', regex=True)
+        .str.replace(r'\s+', ' ', regex=True)
+        .str.strip()
+    )
+
     df = df.dropna(subset=['No.'])
 
     df['Facility'] = (
@@ -105,11 +113,11 @@ try:
 
     # ── Tabel Data Lengkap ───────────────────────────────────────
     st.subheader("📋 Facility Breakdowns Detail Log")
-    kolom = [
-        'No.', 'Date', 'Start time', 'End time', 'Stop time',
-        'Facility', 'Equipment', 'Facility abnormality details',
-        'Field work action', 'Worker', 'Shift work', 'Emergency call'
-    ]
+
+    # Kolom otomatis — tidak hardcode nama kolom bermasalah
+    kolom_wajib = ['No.', 'Date', 'Start time', 'End time', 'Stop time', 'Facility', 'Equipment']
+    kolom_extra = [c for c in df.columns if c not in kolom_wajib and c != 'Stop_Minutes']
+    kolom = kolom_wajib + kolom_extra
 
     df_tampil = df[kolom].copy()
     df_tampil['No.'] = df_tampil['No.'].astype(str).str.replace('.0', '', regex=False)
@@ -262,13 +270,9 @@ try:
             fig_down.update_layout(showlegend=False, xaxis_tickangle=-30)
             st.plotly_chart(fig_down, use_container_width=True)
 
+        # Tabel detail otomatis — pakai kolom yang sama
         st.markdown(f"**📋 Detail Log — {pilihan_facility}**")
-        kolom_detail = [
-            'No.', 'Date', 'Start time', 'End time', 'Stop time',
-            'Facility', 'Equipment', 'Facility abnormality details',
-            'Field work action', 'Worker', 'Shift work', 'Emergency call'
-        ]
-        df_detail = df_filtered[kolom_detail].copy()
+        df_detail = df_filtered[kolom].copy()
         df_detail['No.'] = df_detail['No.'].astype(str).str.replace('.0', '', regex=False)
         st.dataframe(df_detail, use_container_width=True, hide_index=True)
 
