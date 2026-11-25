@@ -19,7 +19,6 @@ def muat_data_baru():
     response.raise_for_status()
     
     df = pd.read_csv(io.StringIO(response.text))
-    st.write(df.columns.tolist())
 
     df.columns = df.columns.str.strip().str.replace('\n', ' ', regex=False)
     df = df.dropna(subset=['No.'])
@@ -107,13 +106,11 @@ try:
     # ── Tabel Data Lengkap ───────────────────────────────────────
     st.subheader("📋 Facility Breakdowns Detail Log")
     kolom = [
-    'No.', 'Date', 'Start time', 'End time', 'Stop time',
-    'Facility', 'Equipment', 'Facility abnormality details',
-    'Field\nwork\n action',
-    'Worker', 'Shift work', 'Emergency\n call'
-]
+        'No.', 'Date', 'Start time', 'End time', 'Stop time',
+        'Facility', 'Equipment', 'Facility abnormality details',
+        'Field work action', 'Worker', 'Shift work', 'Emergency call'
+    ]
 
-    
     df_tampil = df[kolom].copy()
     df_tampil['No.'] = df_tampil['No.'].astype(str).str.replace('.0', '', regex=False)
 
@@ -213,7 +210,6 @@ try:
 
         df_filtered = df[df['Facility'] == pilihan_facility]
 
-        # ── Sub-KPI untuk facility terpilih
         total_kasus_fac   = len(df_filtered)
         total_menit_fac   = df_filtered['Stop_Minutes'].sum()
         downtime_fac_teks = f"{total_menit_fac // 60}h {total_menit_fac % 60}m"
@@ -228,7 +224,6 @@ try:
 
         st.markdown("")
 
-        # ── Grafik Bar: Equipment vs Jumlah Kasus & Downtime
         ch1, ch2 = st.columns(2)
 
         with ch1:
@@ -267,14 +262,12 @@ try:
             fig_down.update_layout(showlegend=False, xaxis_tickangle=-30)
             st.plotly_chart(fig_down, use_container_width=True)
 
-        # ── Tabel detail untuk facility terpilih
         st.markdown(f"**📋 Detail Log — {pilihan_facility}**")
-      kolom_detail = [
-    'No.', 'Date', 'Start time', 'End time', 'Stop time',
-    'Facility', 'Equipment', 'Facility abnormality details',
-    'Field\nwork\n action', 'Worker', 'Shift work', 'Emergency\n call'
-]
-
+        kolom_detail = [
+            'No.', 'Date', 'Start time', 'End time', 'Stop time',
+            'Facility', 'Equipment', 'Facility abnormality details',
+            'Field work action', 'Worker', 'Shift work', 'Emergency call'
+        ]
         df_detail = df_filtered[kolom_detail].copy()
         df_detail['No.'] = df_detail['No.'].astype(str).str.replace('.0', '', regex=False)
         st.dataframe(df_detail, use_container_width=True, hide_index=True)
