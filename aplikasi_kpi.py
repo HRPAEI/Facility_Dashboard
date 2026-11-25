@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 import io
 
@@ -157,54 +158,55 @@ try:
     else:
         df_trend['Periode'] = df_trend['Date'].dt.to_period('M').dt.to_timestamp()
 
-    # ✅ Fix: reset_index dengan as_index=False agar kompatibel Pandas terbaru
-    df_trend['Facility'] = df_trend['Facility'].astype(str)
-    df_trend['Periode']  = df_trend['Periode'].astype(str)
+    # ✅ Gunakan Graph Objects langsung — hindari bug px.line + groupby Pandas terbaru
+    daftar_fac = sorted(df_trend['Facility'].unique().tolist())
 
     tab1, tab2 = st.tabs(["📦 Number of Cases", "⏱️ Total Downtime (Minutes)"])
 
     with tab1:
-        df_cases = (
-            df_trend.groupby(['Periode', 'Facility'], as_index=False)
-            .size()
-            .rename(columns={'size': 'Cases'})
-        )
-        df_cases['Periode'] = pd.to_datetime(df_cases['Periode'])
-        fig_cases = px.line(
-            df_cases,
-            x='Periode', y='Cases',
-            color='Facility',
-            markers=True,
-            title=f"Breakdown Cases per Facility ({granularitas})",
-            labels={'Periode': 'Date', 'Cases': 'Number of Cases'}
-        )
+        fig_cases = go.Figure()
+        for fac in daftar_fac:
+            df_fac_trend = (
+                df_trend[df_trend['Facility'] == fac]
+                .groupby('Periode', as_index=False)
+                .size()
+                .rename(columns={'size': 'Cases'})
+            )
+            fig_cases.add_trace(go.Scatter(
+                x=df_fac_trend['Periode'],
+                y=df_fac_trend['Cases'],
+                mode='lines+markers',
+                name=fac
+            ))
         fig_cases.update_layout(
-            hovermode='x unified',
+            title=f"Breakdown Cases per Facility ({granularitas})",
             xaxis_title='Date',
             yaxis_title='Number of Cases',
-            legend_title='Facility'
+            legend_title='Facility',
+            hovermode='x unified'
         )
         st.plotly_chart(fig_cases, use_container_width=True)
 
     with tab2:
-        df_downtime = (
-            df_trend.groupby(['Periode', 'Facility'], as_index=False)['Stop_Minutes']
-            .sum()
-        )
-        df_downtime['Periode'] = pd.to_datetime(df_downtime['Periode'])
-        fig_downtime = px.line(
-            df_downtime,
-            x='Periode', y='Stop_Minutes',
-            color='Facility',
-            markers=True,
-            title=f"Total Downtime per Facility ({granularitas})",
-            labels={'Periode': 'Date', 'Stop_Minutes': 'Downtime (Minutes)'}
-        )
+        fig_downtime = go.Figure()
+        for fac in daftar_fac:
+            df_fac_down = (
+                df_trend[df_trend['Facility'] == fac]
+                .groupby('Periode', as_index=False)['Stop_Minutes']
+                .sum()
+            )
+            fig_downtime.add_trace(go.Scatter(
+                x=df_fac_down['Periode'],
+                y=df_fac_down['Stop_Minutes'],
+                mode='lines+markers',
+                name=fac
+            ))
         fig_downtime.update_layout(
-            hovermode='x unified',
+            title=f"Total Downtime per Facility ({granularitas})",
             xaxis_title='Date',
             yaxis_title='Downtime (Minutes)',
-            legend_title='Facility'
+            legend_title='Facility',
+            hovermode='x unified'
         )
         st.plotly_chart(fig_downtime, use_container_width=True)
 
