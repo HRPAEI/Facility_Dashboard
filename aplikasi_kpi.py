@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
+import plotly.express as px
 import requests
 import io
 
@@ -61,6 +61,28 @@ def muat_data_baru():
     return df
 
 
+# ── Helper: buat bar chart warna-warni tanpa px.bar color= ──
+def buat_bar(x_vals, y_vals, title, y_label):
+    warna = px.colors.qualitative.Plotly
+    fig = go.Figure()
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        fig.add_trace(go.Bar(
+            x=[x], y=[y],
+            name=str(x),
+            marker_color=warna[i % len(warna)],
+            text=[y],
+            textposition='outside',
+            showlegend=False
+        ))
+    fig.update_layout(
+        title=title,
+        yaxis_title=y_label,
+        xaxis_tickangle=-30,
+        bargap=0.2
+    )
+    return fig
+
+
 try:
     df = muat_data_baru()
 
@@ -96,15 +118,12 @@ try:
         st.subheader("📊 Total Downtime by Facility")
         df_fac = df.groupby('Facility')['Stop_Minutes'].sum().reset_index()
         df_fac.columns = ['Facility', 'Stop_Minutes']
-        fig_bar = px.bar(
-            df_fac,
-            x='Facility', y='Stop_Minutes',
-            color='Facility',
-            text_auto=True,
-            color_discrete_sequence=px.colors.qualitative.Plotly,
-            labels={'Stop_Minutes': 'Downtime (Minutes)'}
+        fig_bar = buat_bar(
+            df_fac['Facility'].tolist(),
+            df_fac['Stop_Minutes'].tolist(),
+            title="Total Downtime by Facility",
+            y_label="Downtime (Minutes)"
         )
-        fig_bar.update_layout(showlegend=False)
         st.plotly_chart(fig_bar, use_container_width=True)
 
     with g2:
@@ -251,15 +270,12 @@ try:
             st.markdown(f"**📦 Cases per Equipment — {pilihan_facility}**")
             df_eqp_count = df_filtered['Equipment'].value_counts().reset_index()
             df_eqp_count.columns = ['Equipment', 'Cases']
-            fig_count = px.bar(
-                df_eqp_count,
-                x='Equipment', y='Cases',
-                color='Equipment',
-                text_auto=True,
-                color_discrete_sequence=px.colors.qualitative.Plotly,
-                title=f"Number of Cases per Equipment ({pilihan_facility})"
+            fig_count = buat_bar(
+                df_eqp_count['Equipment'].tolist(),
+                df_eqp_count['Cases'].tolist(),
+                title=f"Number of Cases per Equipment ({pilihan_facility})",
+                y_label="Cases"
             )
-            fig_count.update_layout(showlegend=False, xaxis_tickangle=-30)
             st.plotly_chart(fig_count, use_container_width=True)
 
         with ch2:
@@ -269,15 +285,12 @@ try:
                 .sum()
                 .sort_values('Stop_Minutes', ascending=False)
             )
-            fig_down = px.bar(
-                df_eqp_down,
-                x='Equipment', y='Stop_Minutes',
-                color='Equipment',
-                text_auto=True,
-                color_discrete_sequence=px.colors.qualitative.Plotly,
-                title=f"Total Downtime per Equipment ({pilihan_facility})"
+            fig_down = buat_bar(
+                df_eqp_down['Equipment'].tolist(),
+                df_eqp_down['Stop_Minutes'].tolist(),
+                title=f"Total Downtime per Equipment ({pilihan_facility})",
+                y_label="Downtime (Minutes)"
             )
-            fig_down.update_layout(showlegend=False, xaxis_tickangle=-30)
             st.plotly_chart(fig_down, use_container_width=True)
 
         st.markdown(f"**📋 Detail Log — {pilihan_facility}**")
