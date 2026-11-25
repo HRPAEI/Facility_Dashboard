@@ -99,10 +99,12 @@ try:
         fig_bar = px.bar(
             df_fac,
             x='Facility', y='Stop_Minutes',
+            color='Facility',
             text_auto=True,
             color_discrete_sequence=px.colors.qualitative.Plotly,
             labels={'Stop_Minutes': 'Downtime (Minutes)'}
         )
+        fig_bar.update_layout(showlegend=False)
         st.plotly_chart(fig_bar, use_container_width=True)
 
     with g2:
@@ -112,7 +114,8 @@ try:
         fig_pie = px.pie(
             df_fac_count,
             names='Facility', values='Total',
-            hole=0.4
+            hole=0.4,
+            color_discrete_sequence=px.colors.qualitative.Plotly
         )
         st.plotly_chart(fig_pie, use_container_width=True)
 
@@ -160,12 +163,13 @@ try:
         df_trend['Periode'] = df_trend['Date'].dt.to_period('M').dt.to_timestamp()
 
     daftar_fac = sorted(df_trend['Facility'].unique().tolist())
+    warna = px.colors.qualitative.Plotly
 
     tab1, tab2 = st.tabs(["📦 Number of Cases", "⏱️ Total Downtime (Minutes)"])
 
     with tab1:
         fig_cases = go.Figure()
-        for fac in daftar_fac:
+        for i, fac in enumerate(daftar_fac):
             df_fac_trend = (
                 df_trend[df_trend['Facility'] == fac]
                 .groupby('Periode', as_index=False)
@@ -176,7 +180,8 @@ try:
                 x=df_fac_trend['Periode'],
                 y=df_fac_trend['Cases'],
                 mode='lines+markers',
-                name=fac
+                name=fac,
+                line=dict(color=warna[i % len(warna)])
             ))
         fig_cases.update_layout(
             title=f"Breakdown Cases per Facility ({granularitas})",
@@ -189,7 +194,7 @@ try:
 
     with tab2:
         fig_downtime = go.Figure()
-        for fac in daftar_fac:
+        for i, fac in enumerate(daftar_fac):
             df_fac_down = (
                 df_trend[df_trend['Facility'] == fac]
                 .groupby('Periode', as_index=False)['Stop_Minutes']
@@ -199,7 +204,8 @@ try:
                 x=df_fac_down['Periode'],
                 y=df_fac_down['Stop_Minutes'],
                 mode='lines+markers',
-                name=fac
+                name=fac,
+                line=dict(color=warna[i % len(warna)])
             ))
         fig_downtime.update_layout(
             title=f"Total Downtime per Facility ({granularitas})",
@@ -245,10 +251,10 @@ try:
             st.markdown(f"**📦 Cases per Equipment — {pilihan_facility}**")
             df_eqp_count = df_filtered['Equipment'].value_counts().reset_index()
             df_eqp_count.columns = ['Equipment', 'Cases']
-            # ✅ Hapus color='Equipment', ganti color_discrete_sequence
             fig_count = px.bar(
                 df_eqp_count,
                 x='Equipment', y='Cases',
+                color='Equipment',
                 text_auto=True,
                 color_discrete_sequence=px.colors.qualitative.Plotly,
                 title=f"Number of Cases per Equipment ({pilihan_facility})"
@@ -263,10 +269,10 @@ try:
                 .sum()
                 .sort_values('Stop_Minutes', ascending=False)
             )
-            # ✅ Hapus color='Equipment', ganti color_discrete_sequence
             fig_down = px.bar(
                 df_eqp_down,
                 x='Equipment', y='Stop_Minutes',
+                color='Equipment',
                 text_auto=True,
                 color_discrete_sequence=px.colors.qualitative.Plotly,
                 title=f"Total Downtime per Equipment ({pilihan_facility})"
