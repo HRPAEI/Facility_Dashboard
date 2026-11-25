@@ -100,6 +100,7 @@ try:
             df_fac,
             x='Facility', y='Stop_Minutes',
             text_auto=True,
+            color_discrete_sequence=px.colors.qualitative.Plotly,
             labels={'Stop_Minutes': 'Downtime (Minutes)'}
         )
         st.plotly_chart(fig_bar, use_container_width=True)
@@ -158,7 +159,6 @@ try:
     else:
         df_trend['Periode'] = df_trend['Date'].dt.to_period('M').dt.to_timestamp()
 
-    # ✅ Gunakan Graph Objects langsung — hindari bug px.line + groupby Pandas terbaru
     daftar_fac = sorted(df_trend['Facility'].unique().tolist())
 
     tab1, tab2 = st.tabs(["📦 Number of Cases", "⏱️ Total Downtime (Minutes)"])
@@ -245,11 +245,12 @@ try:
             st.markdown(f"**📦 Cases per Equipment — {pilihan_facility}**")
             df_eqp_count = df_filtered['Equipment'].value_counts().reset_index()
             df_eqp_count.columns = ['Equipment', 'Cases']
+            # ✅ Hapus color='Equipment', ganti color_discrete_sequence
             fig_count = px.bar(
                 df_eqp_count,
                 x='Equipment', y='Cases',
-                color='Equipment',
                 text_auto=True,
+                color_discrete_sequence=px.colors.qualitative.Plotly,
                 title=f"Number of Cases per Equipment ({pilihan_facility})"
             )
             fig_count.update_layout(showlegend=False, xaxis_tickangle=-30)
@@ -262,11 +263,12 @@ try:
                 .sum()
                 .sort_values('Stop_Minutes', ascending=False)
             )
+            # ✅ Hapus color='Equipment', ganti color_discrete_sequence
             fig_down = px.bar(
                 df_eqp_down,
                 x='Equipment', y='Stop_Minutes',
-                color='Equipment',
                 text_auto=True,
+                color_discrete_sequence=px.colors.qualitative.Plotly,
                 title=f"Total Downtime per Equipment ({pilihan_facility})"
             )
             fig_down.update_layout(showlegend=False, xaxis_tickangle=-30)
