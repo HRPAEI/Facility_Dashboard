@@ -16,7 +16,7 @@ def muat_data_baru():
     tautan_resmi = "https://docs.google.com/spreadsheets/d/1AWMk2xCkLc9_AqjbZQ6DvkGnxiQSVVf9PHMuXM56j50/export?format=csv&gid=0"
     
     response = requests.get(tautan_resmi, verify=False)
-    response.raise_in_status()
+    response.raise_for_status()
     
     df = pd.read_csv(io.StringIO(response.text))
 
