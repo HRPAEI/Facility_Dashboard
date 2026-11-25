@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import requests
 import io
-import re
 
 st.set_page_config(page_title="Facility Dashboard", layout="wide")
 
@@ -30,11 +29,6 @@ def muat_data_baru():
     )
 
     df = df.dropna(subset=['No.'])
-
-    # ── DEBUG: tampilkan nama kolom setelah dibersihkan ──
-    st.write("✅ Nama kolom setelah dibersihkan:")
-    st.write(df.columns.tolist())
-    # ── END DEBUG ──
 
     df['Facility'] = (
         df['Facility']
@@ -101,27 +95,39 @@ try:
     with g1:
         st.subheader("📊 Total Downtime by Facility")
         df_fac = df.groupby('Facility')['Stop_Minutes'].sum().reset_index()
-        st.plotly_chart(
-            px.bar(df_fac, x='Facility', y='Stop_Minutes', color='Facility', text_auto=True),
-            use_container_width=True
+        df_fac.columns = ['Facility', 'Stop_Minutes']
+        fig_bar = px.bar(
+            df_fac,
+            x='Facility', y='Stop_Minutes',
+            color='Facility',
+            text_auto=True,
+            labels={'Stop_Minutes': 'Downtime (Minutes)'}
         )
+        fig_bar.update_layout(showlegend=False)
+        st.plotly_chart(fig_bar, use_container_width=True)
+
     with g2:
         st.subheader("🏭 Cases Based on Facility")
         df_fac_count = df['Facility'].value_counts().reset_index()
         df_fac_count.columns = ['Facility', 'Total']
-        st.plotly_chart(
-            px.pie(df_fac_count, names='Facility', values='Total', hole=0.4),
-            use_container_width=True
+        fig_pie = px.pie(
+            df_fac_count,
+            names='Facility', values='Total',
+            hole=0.4
         )
+        st.plotly_chart(fig_pie, use_container_width=True)
 
     st.markdown("---")
 
     # ── Tabel Data Lengkap ───────────────────────────────────────
     st.subheader("📋 Facility Breakdowns Detail Log")
 
-    kolom_wajib = ['No.', 'Date', 'Start time', 'End time', 'Stop time', 'Facility', 'Equipment']
-    kolom_extra = [c for c in df.columns if c not in kolom_wajib and c != 'Stop_Minutes']
-    kolom = kolom_wajib + kolom_extra
+    kolom = [
+        'No.', 'Date', 'Start time', 'End time', 'Stop time',
+        'Facility', 'Equipment', 'Facility abnormality details',
+        'Simple Reset', 'Field work action', 'Worker',
+        'Shift work', 'Emergency call', 'Failure registration', 'Safety gear'
+    ]
 
     df_tampil = df[kolom].copy()
     df_tampil['No.'] = df_tampil['No.'].astype(str).str.replace('.0', '', regex=False)
