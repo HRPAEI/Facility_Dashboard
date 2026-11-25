@@ -19,7 +19,6 @@ def muat_data_baru():
     
     df = pd.read_csv(io.StringIO(response.text))
 
-    # Bersihkan nama kolom
     df.columns = (
         df.columns
         .str.strip()
@@ -63,16 +62,6 @@ def muat_data_baru():
 
 try:
     df = muat_data_baru()
-
-    # ── DEBUG UTAMA ──────────────────────────────────────────────
-    st.write("### DEBUG INFO")
-    st.write("Jumlah baris:", len(df))
-    st.write("Kolom:", df.columns.tolist())
-    st.write("Sample Facility:", df['Facility'].unique().tolist())
-    st.write("Sample Stop_Minutes:", df['Stop_Minutes'].tolist()[:5])
-    st.write(df.head(3))
-    st.markdown("---")
-    # ── END DEBUG ────────────────────────────────────────────────
 
     # ── KPI Metrik ──────────────────────────────────────────────
     total_kasus = len(df)
@@ -146,8 +135,9 @@ try:
 
     st.markdown("---")
 
-    # ── 📈 MULTI-LINE CHART ──────────────────────────────────────
+    # ── 📈 MULTI-LINE CHART — Trend per Facility ────────────────
     st.subheader("📈 Breakdown Trend per Facility (Over Time)")
+
     col_toggle1, col_toggle2 = st.columns([1, 3])
     with col_toggle1:
         granularitas = st.radio(
@@ -167,14 +157,19 @@ try:
     else:
         df_trend['Periode'] = df_trend['Date'].dt.to_period('M').dt.to_timestamp()
 
+    # ✅ Fix: reset_index dengan as_index=False agar kompatibel Pandas terbaru
+    df_trend['Facility'] = df_trend['Facility'].astype(str)
+    df_trend['Periode']  = df_trend['Periode'].astype(str)
+
     tab1, tab2 = st.tabs(["📦 Number of Cases", "⏱️ Total Downtime (Minutes)"])
 
     with tab1:
         df_cases = (
-            df_trend.groupby(['Periode', 'Facility'])
+            df_trend.groupby(['Periode', 'Facility'], as_index=False)
             .size()
-            .reset_index(name='Cases')
+            .rename(columns={'size': 'Cases'})
         )
+        df_cases['Periode'] = pd.to_datetime(df_cases['Periode'])
         fig_cases = px.line(
             df_cases,
             x='Periode', y='Cases',
@@ -193,10 +188,10 @@ try:
 
     with tab2:
         df_downtime = (
-            df_trend.groupby(['Periode', 'Facility'])['Stop_Minutes']
+            df_trend.groupby(['Periode', 'Facility'], as_index=False)['Stop_Minutes']
             .sum()
-            .reset_index()
         )
+        df_downtime['Periode'] = pd.to_datetime(df_downtime['Periode'])
         fig_downtime = px.line(
             df_downtime,
             x='Periode', y='Stop_Minutes',
@@ -215,8 +210,9 @@ try:
 
     st.markdown("---")
 
-    # ── 🔍 SEARCH BOX ────────────────────────────────────────────
+    # ── 🔍 SEARCH BOX — Equipment Breakdown per Facility ────────
     st.subheader("🔍 Equipment Breakdown Search by Facility")
+
     daftar_facility = sorted(df['Facility'].dropna().unique().tolist())
     pilihan_facility = st.selectbox(
         "Pilih atau ketik nama Facility:",
@@ -225,6 +221,7 @@ try:
     )
 
     if pilihan_facility != "-- Pilih Facility --":
+
         df_filtered = df[df['Facility'] == pilihan_facility]
 
         total_kasus_fac   = len(df_filtered)
@@ -259,9 +256,8 @@ try:
         with ch2:
             st.markdown(f"**⏱️ Total Downtime per Equipment — {pilihan_facility}**")
             df_eqp_down = (
-                df_filtered.groupby('Equipment')['Stop_Minutes']
+                df_filtered.groupby('Equipment', as_index=False)['Stop_Minutes']
                 .sum()
-                .reset_index()
                 .sort_values('Stop_Minutes', ascending=False)
             )
             fig_down = px.bar(
