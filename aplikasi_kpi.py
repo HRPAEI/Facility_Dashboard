@@ -19,7 +19,8 @@ def muat_data_baru():
     response.raise_for_status()
     
     df = pd.read_csv(io.StringIO(response.text))
-    
+    st.write(df.columns.tolist())
+
     df.columns = df.columns.str.strip().str.replace('\n', ' ', regex=False)
     df = df.dropna(subset=['No.'])
 
