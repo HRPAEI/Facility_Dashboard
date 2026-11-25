@@ -91,31 +91,40 @@ try:
     st.markdown("---")
 
     # ── Visualisasi Utama ────────────────────────────────────────
-    g1, g2 = st.columns(2)
-    with g1:
-        st.subheader("📊 Total Downtime by Facility")
-        df_fac = df.groupby('Facility')['Stop_Minutes'].sum().reset_index()
-        df_fac.columns = ['Facility', 'Stop_Minutes']
-        fig_bar = px.bar(
-            df_fac,
-            x='Facility', y='Stop_Minutes',
-            color='Facility',
-            text_auto=True,
-            labels={'Stop_Minutes': 'Downtime (Minutes)'}
-        )
-        fig_bar.update_layout(showlegend=False)
-        st.plotly_chart(fig_bar, use_container_width=True)
+    try:
+        g1, g2 = st.columns(2)
+        with g1:
+            st.subheader("📊 Total Downtime by Facility")
+            df_fac = df.groupby('Facility')['Stop_Minutes'].sum().reset_index()
+            df_fac.columns = ['Facility', 'Stop_Minutes']
+            st.write("DEBUG df_fac:")
+            st.write(df_fac)
+            fig_bar = px.bar(
+                df_fac,
+                x='Facility', y='Stop_Minutes',
+                text_auto=True,
+                labels={'Stop_Minutes': 'Downtime (Minutes)'}
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
 
-    with g2:
-        st.subheader("🏭 Cases Based on Facility")
-        df_fac_count = df['Facility'].value_counts().reset_index()
-        df_fac_count.columns = ['Facility', 'Total']
-        fig_pie = px.pie(
-            df_fac_count,
-            names='Facility', values='Total',
-            hole=0.4
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
+        with g2:
+            st.subheader("🏭 Cases Based on Facility")
+            df_fac_count = df['Facility'].value_counts().reset_index()
+            df_fac_count.columns = ['Facility', 'Total']
+            st.write("DEBUG df_fac_count:")
+            st.write(df_fac_count)
+            fig_pie = px.pie(
+                df_fac_count,
+                names='Facility', values='Total',
+                hole=0.4
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+    except Exception as e2:
+        st.error(f"Error di grafik: {e2}")
+        st.write("DEBUG df kolom:", df.columns.tolist())
+        st.write("DEBUG df head:")
+        st.write(df.head())
 
     st.markdown("---")
 
