@@ -107,10 +107,13 @@ try:
     # ── Tabel Data Lengkap ───────────────────────────────────────
     st.subheader("📋 Facility Breakdowns Detail Log")
     kolom = [
-        'No.', 'Date', 'Start time', 'End time', 'Stop time',
-        'Facility', 'Equipment', 'Facility abnormality details',
-        'Field work  action', 'Worker', 'Shift work', 'Emergency  call'
-    ]
+    'No.', 'Date', 'Start time', 'End time', 'Stop time',
+    'Facility', 'Equipment', 'Facility abnormality details',
+    'Field\nwork\n action',
+    'Worker', 'Shift work', 'Emergency\n call'
+]
+
+    
     df_tampil = df[kolom].copy()
     df_tampil['No.'] = df_tampil['No.'].astype(str).str.replace('.0', '', regex=False)
 
@@ -266,11 +269,12 @@ try:
 
         # ── Tabel detail untuk facility terpilih
         st.markdown(f"**📋 Detail Log — {pilihan_facility}**")
-        kolom_detail = [
-            'No.', 'Date', 'Start time', 'End time', 'Stop time',
-            'Facility', 'Equipment', 'Facility abnormality details',
-            'Field work  action', 'Worker', 'Shift work', 'Emergency  call'
-        ]
+      kolom_detail = [
+    'No.', 'Date', 'Start time', 'End time', 'Stop time',
+    'Facility', 'Equipment', 'Facility abnormality details',
+    'Field\nwork\n action', 'Worker', 'Shift work', 'Emergency\n call'
+]
+
         df_detail = df_filtered[kolom_detail].copy()
         df_detail['No.'] = df_detail['No.'].astype(str).str.replace('.0', '', regex=False)
         st.dataframe(df_detail, use_container_width=True, hide_index=True)
